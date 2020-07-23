@@ -70,7 +70,11 @@ func (item *Item) IsZero() bool {
 	return true
 }
 
-// Remove removes the file cache from cache space physically.
+// Remove removes the file cache from cache space physically. If the
+// cache item is a psudo one, Remove will always returns error as nil.
 func (item *Item) Remove() error {
-	return os.Remove(item.Path)
+	if item.Real {
+		return os.Remove(item.Path)
+	}
+	return nil
 }
