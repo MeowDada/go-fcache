@@ -31,7 +31,7 @@ func (mgr *Manager) Cap() int64 {
 
 // Set sets a file as a cache record into the manager. If the cache volume is full,
 // it will try emit some cache items to cleanup some cache space then insert this one.
-// It is possible that no cache items could be emited at the moment which leads to this
+// It is possible that no cache items could be emitted at the moment which leads to this
 // operation be unavailable. To prevent waiting deadlock, by default we use timeout setting
 // and retry mechanism internally to prevent this condition.
 func (mgr *Manager) Set(path string, size int64) error {
