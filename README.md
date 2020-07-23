@@ -1,6 +1,7 @@
 go-fcache
 =====
-[![Go Report Card](https://goreportcard.com/badge/github.com/etcd-io/bbolt?style=flat-square)](https://goreportcard.com/report/github.com/MeowDada/go-fcache)
+[![Go Report Card](https://goreportcard.com/badge/github.com/MeowDada/go-fcache)](https://goreportcard.com/report/github.com/MeowDada/go-fcache)
+[![LICENSE](https://img.shields.io/github/license/meowdada/go-fcache)](https://github.com/MeowDada/go-fcache/blob/master/LICENSE)
 
 go-fcache is a file cache library implemented by pure Go.
 
