@@ -1,6 +1,7 @@
 package fcache
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -74,4 +75,67 @@ func TestHashmapClose(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func TestHashmapIncrRef(t *testing.T) {
+	m := Hashmap()
+	dummies := []string{
+		"d1",
+		"d2",
+		"d3",
+		"d4",
+		"d5",
+	}
+	err := m.IncrRef(dummies...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = m.Iter(func(k string, v Item) error {
+		if v.Ref != 1 {
+			return fmt.Errorf("expect %s's item with ref = 1, but get %d", k, v.Ref)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestHashmapDecrRef(t *testing.T) {
+	m := Hashmap()
+
+	// Case1: Decrement reference count of unexist item.
+	// Should return no error.
+	err := m.DecrRef("unexist")
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Case2: Decrement reference count of an existing item with no reference.
+	// Should return no error
+	m.Put("abc", 100)
+	err = m.DecrRef("abc")
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Case3: Decrement reference count of an existing item with reference count > 1.
+	m.IncrRef("san")
+	m.IncrRef("san")
+	m.IncrRef("san")
+	err = m.DecrRef("san")
+	if err != nil {
+		t.Error(err)
+	}
+
+	item, err := m.Get("san")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if item.Ref != 2 {
+		t.Errorf("expect reference count = 2, but get %d\n", item.Ref)
+	}
+
 }
