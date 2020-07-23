@@ -47,3 +47,12 @@ func TestCacheReplacementAlgoRR(t *testing.T) {
 		t.Errorf("expect item should not be zero value")
 	}
 }
+
+func TestCacheReplacementAlgoRRError(t *testing.T) {
+	db := Hashmap()
+	rr := RR()
+	_, err := rr.Emit(db)
+	if err == nil {
+		t.Errorf("expect err = %v, but get nil", ErrNoEmitableCaches)
+	}
+}

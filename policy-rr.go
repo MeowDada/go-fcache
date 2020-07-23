@@ -20,11 +20,8 @@ func (rr rr) Emit(db DB) (victim Item, err error) {
 		victim = v
 		return nil
 	})
-	if err != nil {
-		return victim, err
-	}
-	if victim.IsZero() {
+	if victim.IsZero() && err == nil {
 		return victim, ErrNoEmitableCaches
 	}
-	return victim, nil
+	return victim, err
 }

@@ -26,11 +26,8 @@ func (mru mru) Emit(db DB) (victim Item, err error) {
 		}
 		return nil
 	})
-	if err != nil {
-		return victim, err
-	}
-	if victim.IsZero() {
+	if victim.IsZero() && err == nil {
 		return victim, ErrNoEmitableCaches
 	}
-	return victim, nil
+	return victim, err
 }

@@ -40,3 +40,12 @@ func TestCacheReplacementAlgoFIFO(t *testing.T) {
 		t.Errorf("expect %v, but get %v\n", pairs[0], item)
 	}
 }
+
+func TestCacheReplacementAlgoFIFOError(t *testing.T) {
+	db := Hashmap()
+	fifo := FIFO()
+	_, err := fifo.Emit(db)
+	if err == nil {
+		t.Errorf("expect err = %v, but get nil", ErrNoEmitableCaches)
+	}
+}

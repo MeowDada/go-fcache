@@ -3,6 +3,8 @@ package fcache
 import (
 	"fmt"
 	"testing"
+
+	"github.com/pkg/errors"
 )
 
 func TestHashmapPut(t *testing.T) {
@@ -22,11 +24,39 @@ func TestHashmapPut(t *testing.T) {
 	}
 
 	m := Hashmap()
+
+	// Case1: valid put.
 	for _, p := range pairs {
 		err := m.Put(p.path, p.size)
 		if err != nil {
 			t.Errorf("exepct no error, but get %v when putting %v", err, p)
 		}
+	}
+
+	// Case2: put duplicate keys.
+	err := m.Put(pairs[0].path, pairs[0].size)
+	if err != ErrDupKey {
+		t.Errorf("expect %v, but get %v", ErrDupKey, err)
+	}
+
+	// Case3: replace dummy items.
+	err = m.IncrRef("happy")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = m.Put("happy", 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item, err := m.Get("happy")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !item.Real {
+		t.Errorf("expect item has turned into real, but it does not\n")
 	}
 }
 
@@ -138,4 +168,53 @@ func TestHashmapDecrRef(t *testing.T) {
 		t.Errorf("expect reference count = 2, but get %d\n", item.Ref)
 	}
 
+}
+
+func TestHashmapRemove(t *testing.T) {
+	pairs := []struct {
+		path string
+		size int64
+	}{
+		{"/path/to/file", 100},
+		{"hello-world", 125},
+		{"fcache", 125},
+		{"lala3", 200},
+		{"test-put", 300},
+		{"wonder4", 10},
+		{"fortune", 55},
+		{"solider", 76},
+		{"yakusoku", 999},
+	}
+
+	m := Hashmap()
+	for _, p := range pairs {
+		err := m.Put(p.path, p.size)
+		if err != nil {
+			t.Errorf("exepct no error, but get %v when putting %v", err, p)
+		}
+		err = m.Remove(p.path)
+		if err != nil {
+			t.Errorf("expect remove %s with no error, but get %v", p.path, err)
+		}
+		_, err = m.Get(p.path)
+		if err != ErrCacheMiss {
+			t.Errorf("expect %v, but get %v", ErrCacheMiss, err)
+		}
+	}
+}
+
+func TestHashmapIter(t *testing.T) {
+	m := Hashmap()
+	err := m.Put("abc", 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	e := errors.New("dummy error")
+	err = m.Iter(func(k string, v Item) error {
+		return e
+	})
+	if err != e {
+		t.Errorf("expect %v, but get %v", e, err)
+	}
 }

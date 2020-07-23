@@ -48,3 +48,12 @@ func TestCacheReplacementAlgoLRU(t *testing.T) {
 		t.Errorf("expect %v, but get %v\n", pairs[0], item)
 	}
 }
+
+func TestCacheReplacementAlgoLRUError(t *testing.T) {
+	db := Hashmap()
+	lru := LRU()
+	_, err := lru.Emit(db)
+	if err == nil {
+		t.Errorf("expect err = %v, but get nil", ErrNoEmitableCaches)
+	}
+}
