@@ -21,6 +21,7 @@ func (mru mru) Emit(db DB) (victim Item, err error) {
 			return nil
 		}
 		if v.LastUsed.After(least) {
+			least = v.LastUsed
 			victim = v
 		}
 		return nil

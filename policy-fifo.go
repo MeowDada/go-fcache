@@ -1,6 +1,8 @@
 package fcache
 
-import "time"
+import (
+	"time"
+)
 
 // FIFO implements policy interface.
 type fifo struct {
@@ -21,6 +23,7 @@ func (fifo fifo) Emit(db DB) (victim Item, err error) {
 			return nil
 		}
 		if v.CreatedAt.Before(least) {
+			least = v.CreatedAt
 			victim = v
 		}
 		return nil

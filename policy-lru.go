@@ -21,6 +21,7 @@ func (lru lru) Emit(db DB) (victim Item, err error) {
 			return nil
 		}
 		if v.LastUsed.Before(least) {
+			least = v.LastUsed
 			victim = v
 		}
 		return nil
