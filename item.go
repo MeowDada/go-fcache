@@ -41,22 +41,23 @@ func NewDummyItem(path string) Item {
 
 // Key returns the key of the item.
 func (item *Item) Key() []byte {
-	return []byte(item.Path)
+	return str2bytes(item.Path)
 }
 
 // Bytes marshals the data structure into binaries.
-func (item *Item) Bytes() ([]byte, error) {
+func (item *Item) Bytes() []byte {
 	var b bytes.Buffer
 	enc := gob.NewEncoder(&b)
-	err := enc.Encode(item)
-	return b.Bytes(), err
+	enc.Encode(item)
+	return b.Bytes()
 }
 
-// Parse parses data fields from the input binaries.
-func (item *Item) Parse(data []byte) error {
+// Parse parses data fields from the input binaries. If error raises,
+// it panics.
+func (item *Item) Parse(data []byte) {
 	b := bytes.NewBuffer(data)
 	dec := gob.NewDecoder(b)
-	return dec.Decode(item)
+	dec.Decode(item)
 }
 
 // IsZero returns this item is zero valued or not.

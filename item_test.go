@@ -17,16 +17,10 @@ func TestItem(t *testing.T) {
 		LastUsed:  time.Now(),
 	}
 
-	data, err := item.Bytes()
-	if err != nil {
-		t.Fatal(err)
-	}
+	data := item.Bytes()
 
 	var dup Item
-	err = dup.Parse(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	dup.Parse(data)
 
 	if !cmp.Equal(dup, item) {
 		t.Errorf("dup = %v, item = %v", dup, item)

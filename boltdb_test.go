@@ -46,10 +46,7 @@ func TestBoltDB(t *testing.T) {
 
 	err = db.(*boltDB).iter(func(k, v []byte) error {
 		var item Item
-		err := item.Parse(v)
-		if err != nil {
-			return err
-		}
+		item.Parse(v)
 		fmt.Println(item)
 		return nil
 	})
