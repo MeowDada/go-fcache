@@ -51,6 +51,7 @@ func TestCacheReplacementAlgoLRU(t *testing.T) {
 
 func TestCacheReplacementAlgoLRUError(t *testing.T) {
 	db := Hashmap()
+	db.IncrRef("123")
 	lru := LRU()
 	_, err := lru.Emit(db)
 	if err == nil {

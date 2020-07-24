@@ -50,6 +50,7 @@ func TestCacheReplacementAlgoRR(t *testing.T) {
 
 func TestCacheReplacementAlgoRRError(t *testing.T) {
 	db := Hashmap()
+	db.IncrRef("123")
 	rr := RR()
 	_, err := rr.Emit(db)
 	if err == nil {

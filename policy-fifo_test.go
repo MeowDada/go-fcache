@@ -43,6 +43,7 @@ func TestCacheReplacementAlgoFIFO(t *testing.T) {
 
 func TestCacheReplacementAlgoFIFOError(t *testing.T) {
 	db := Hashmap()
+	db.IncrRef("123")
 	fifo := FIFO()
 	_, err := fifo.Emit(db)
 	if err == nil {

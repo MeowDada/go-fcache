@@ -1,7 +1,6 @@
 package fcache
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
@@ -55,7 +54,7 @@ func TestBoltDB(t *testing.T) {
 	err = db.(*boltDB).iter(func(k, v []byte) error {
 		var item Item
 		item.Parse(v)
-		fmt.Println(item)
+		t.Log(item)
 		return nil
 	})
 	if err != nil {
