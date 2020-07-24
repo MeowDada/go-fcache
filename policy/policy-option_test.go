@@ -1,13 +1,17 @@
-package fcache
+package policy
 
 import (
 	"testing"
 	"time"
+
+	"github.com/meowdada/go-fcache/backend"
+	"github.com/meowdada/go-fcache/backend/gomap"
+	"github.com/meowdada/go-fcache/codec"
 )
 
 func TestPolicyOptions(t *testing.T) {
 	// Case1: AllowPsudo option
-	h := Hashmap()
+	h := backend.Adapter(gomap.New(), codec.Gob{})
 	err := h.IncrRef("psudo")
 	if err != nil {
 		t.Fatal(err)
@@ -25,7 +29,7 @@ func TestPolicyOptions(t *testing.T) {
 	}
 
 	// Case2: AllowReferenced option
-	h = Hashmap()
+	h = backend.Adapter(gomap.New(), codec.Gob{})
 	err = h.IncrRef("refed")
 	if err != nil {
 		t.Fatal(err)
@@ -43,7 +47,7 @@ func TestPolicyOptions(t *testing.T) {
 	}
 
 	// Case3: MinimalUsed Option
-	h = Hashmap()
+	h = backend.Adapter(gomap.New(), codec.Gob{})
 	h.IncrRef("abc")
 	h.IncrRef("abc")
 	h.DecrRef("abc")
@@ -55,7 +59,7 @@ func TestPolicyOptions(t *testing.T) {
 	}
 
 	// Case4: MinimalLivedTime option
-	h = Hashmap()
+	h = backend.Adapter(gomap.New(), codec.Gob{})
 	h.Put("def", 100)
 	time.Sleep(time.Millisecond)
 	rr = RR(AllowPsudo(), MinimalLiveTime(time.Second))

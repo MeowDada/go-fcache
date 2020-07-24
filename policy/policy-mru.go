@@ -1,27 +1,31 @@
-package fcache
+package policy
 
-import "time"
+import (
+	"time"
+
+	"github.com/meowdada/go-fcache/cache"
+)
 
 // mru implements policy interface.
 type mru struct {
-	validator func(item Item) bool
+	validator func(item cache.Item) bool
 }
 
 // MRU returns a MRU (most-recently-used) cache replacement policy instance.
-func MRU(opts ...PolicyOption) Policy {
+func MRU(opts ...Option) Policy {
 	opt := combine(opts...)
 	return mru{validator: opt.Validate}
 }
 
 // Emit implements MRU cache replacement policy.
-func (mru mru) Emit(db DB) (victim Item, err error) {
+func (mru mru) Emit(db cache.DB) (victim cache.Item, err error) {
 	least := time.Time{}
-	err = db.Iter(func(k string, v Item) error {
+	err = db.Iter(func(k string, v cache.Item) error {
 		if !mru.validator(v) {
 			return nil
 		}
-		if v.LastUsed.After(least) {
-			least = v.LastUsed
+		if v.ATime().After(least) {
+			least = v.ATime()
 			victim = v
 		}
 		return nil

@@ -1,19 +1,23 @@
-package fcache
+package policy
+
+import (
+	"github.com/meowdada/go-fcache/cache"
+)
 
 // rr implements policy interface.
 type rr struct {
-	validator func(item Item) bool
+	validator func(item cache.Item) bool
 }
 
 // RR returns a RR (random replacement) cache replacement policy instance.
-func RR(opts ...PolicyOption) Policy {
+func RR(opts ...Option) Policy {
 	opt := combine(opts...)
 	return rr{validator: opt.Validate}
 }
 
 // Emit implements MRU cache replacement policy.
-func (rr rr) Emit(db DB) (victim Item, err error) {
-	err = db.Iter(func(k string, v Item) error {
+func (rr rr) Emit(db cache.DB) (victim cache.Item, err error) {
+	err = db.Iter(func(k string, v cache.Item) error {
 		if !rr.validator(v) {
 			return nil
 		}

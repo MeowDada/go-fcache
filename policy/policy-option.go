@@ -1,7 +1,9 @@
-package fcache
+package policy
 
 import (
 	"time"
+
+	"github.com/meowdada/go-fcache/cache"
 )
 
 type validateOption struct {
@@ -15,7 +17,7 @@ func newValidateOption() *validateOption {
 	return &validateOption{}
 }
 
-func combine(opts ...PolicyOption) *validateOption {
+func combine(opts ...Option) *validateOption {
 	ret := newValidateOption()
 	for _, opt := range opts {
 		opt.setValidateOption(ret)
@@ -23,24 +25,24 @@ func combine(opts ...PolicyOption) *validateOption {
 	return ret
 }
 
-func (opts *validateOption) Validate(item Item) bool {
-	if !opts.AllowPsudo && !item.Real {
+func (opts *validateOption) Validate(item cache.Item) bool {
+	if !opts.AllowPsudo && !item.IsReal() {
 		return false
 	}
-	if !opts.AllowReferenced && item.Ref > 0 {
+	if !opts.AllowReferenced && item.Reference() > 0 {
 		return false
 	}
-	if opts.MinimalUsed > item.Used {
+	if opts.MinimalUsed > item.UsedCount() {
 		return false
 	}
-	if opts.MinimalLiveTime > time.Now().Sub(item.CreatedAt) {
+	if opts.MinimalLiveTime > time.Now().Sub(item.CTime()) {
 		return false
 	}
 	return true
 }
 
-// PolicyOption configures cache replacement policy.
-type PolicyOption interface {
+// Option configures cache replacement policy.
+type Option interface {
 	setValidateOption(opts *validateOption)
 }
 
@@ -52,7 +54,7 @@ func (allowPsudo) setValidateOption(opts *validateOption) {
 
 // AllowPsudo returns a cache policy option that allows cacher to emit a psudo
 // cache item.
-func AllowPsudo() PolicyOption {
+func AllowPsudo() Option {
 	return allowPsudo{}
 }
 
@@ -64,7 +66,7 @@ func (allowReferenced) setValidateOption(opts *validateOption) {
 
 // AllowReferenced returns a cache policy option that allow cacher to emit a
 // referenced cache item.
-func AllowReferenced() PolicyOption {
+func AllowReferenced() Option {
 	return allowReferenced{}
 }
 
@@ -79,7 +81,7 @@ func (m minimalUsed) setValidateOption(opts *validateOption) {
 // MinimalUsed returns a cache policy option that allow cacher to emit a
 // cache item if and only if its used count has equal or larger than
 // the specific value.
-func MinimalUsed(count int) PolicyOption {
+func MinimalUsed(count int) Option {
 	return minimalUsed{count}
 }
 
@@ -94,6 +96,6 @@ func (m minimalLiveTime) setValidateOption(opts *validateOption) {
 // MinimalLiveTime returns a cache policy option that allow a cacher to
 // emit a cache item if and only if its lifetime has equal or greater than
 // the specific value.
-func MinimalLiveTime(duration time.Duration) PolicyOption {
+func MinimalLiveTime(duration time.Duration) Option {
 	return minimalLiveTime{duration}
 }

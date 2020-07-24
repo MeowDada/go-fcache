@@ -1,11 +1,15 @@
-package fcache
+package policy
 
 import (
 	"testing"
+
+	"github.com/meowdada/go-fcache/backend"
+	"github.com/meowdada/go-fcache/backend/gomap"
+	"github.com/meowdada/go-fcache/codec"
 )
 
-func TestCacheReplacementAlgoMRU(t *testing.T) {
-	db := Hashmap()
+func TestCacheReplacementAlgoRR(t *testing.T) {
+	db := backend.Adapter(gomap.New(), codec.Gob{})
 
 	pairs := []struct {
 		path string
@@ -38,22 +42,21 @@ func TestCacheReplacementAlgoMRU(t *testing.T) {
 		}
 	}
 
-	mru := MRU()
-	item, err := mru.Emit(db)
+	rr := RR()
+	item, err := rr.Emit(db)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if item.Size != pairs[len(pairs)-1].size {
-		t.Errorf("expect %v, but get %v\n", pairs[len(pairs)-1], item)
+	if item.IsZero() {
+		t.Errorf("expect item should not be zero value")
 	}
 }
 
-func TestCacheReplacementAlgoMRUError(t *testing.T) {
-	db := Hashmap()
+func TestCacheReplacementAlgoRRError(t *testing.T) {
+	db := backend.Adapter(gomap.New(), codec.Gob{})
 	db.IncrRef("123")
-	mru := MRU()
-	_, err := mru.Emit(db)
+	rr := RR()
+	_, err := rr.Emit(db)
 	if err == nil {
 		t.Errorf("expect err = %v, but get nil", ErrNoEmitableCaches)
 	}

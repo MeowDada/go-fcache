@@ -1,11 +1,15 @@
-package fcache
+package policy
 
 import (
 	"testing"
+
+	"github.com/meowdada/go-fcache/backend"
+	"github.com/meowdada/go-fcache/backend/gomap"
+	"github.com/meowdada/go-fcache/codec"
 )
 
 func TestCacheReplacementAlgoFIFO(t *testing.T) {
-	db := Hashmap()
+	db := backend.Adapter(gomap.New(), codec.Gob{})
 
 	pairs := []struct {
 		path string
@@ -42,7 +46,7 @@ func TestCacheReplacementAlgoFIFO(t *testing.T) {
 }
 
 func TestCacheReplacementAlgoFIFOError(t *testing.T) {
-	db := Hashmap()
+	db := backend.Adapter(gomap.New(), codec.Gob{})
 	db.IncrRef("123")
 	fifo := FIFO()
 	_, err := fifo.Emit(db)

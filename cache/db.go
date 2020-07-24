@@ -1,4 +1,4 @@
-package fcache
+package cache
 
 // DB is a database which ables to record the information of file caches.
 type DB interface {

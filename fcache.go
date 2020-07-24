@@ -6,17 +6,20 @@ import (
 	"sync"
 
 	retry "github.com/avast/retry-go"
+	"github.com/meowdada/go-fcache/backend"
+	"github.com/meowdada/go-fcache/cache"
+	"github.com/meowdada/go-fcache/policy"
 )
 
 // OnceHandler is a handler for once method.
-type OnceHandler func(preconditionCheck func(size int64) error, putCacheFn func(path string, size int64) error) (Item, error)
+type OnceHandler func(preconditionCheck func(size int64) error, putCacheFn func(path string, size int64) error) (cache.Item, error)
 
 // Manager manages transactions of file caches.
 type Manager struct {
 	cap       int64
 	usage     int64
-	db        DB
-	policy    Policy
+	db        cache.DB
+	policy    policy.Policy
 	retryOpts []retry.Option
 	mu        sync.RWMutex
 }
@@ -25,7 +28,7 @@ type Manager struct {
 func New(opts Options) *Manager {
 	return &Manager{
 		cap:       opts.Capacity,
-		db:        opts.Backend,
+		db:        backend.Adapter(opts.Backend, opts.Codec),
 		policy:    opts.CachePolicy,
 		retryOpts: opts.RetryOptions,
 	}
@@ -41,7 +44,7 @@ func (mgr *Manager) Cap() int64 {
 // It is possible that no cache items could be emitted at the moment which leads to this
 // operation be unavailable. To prevent waiting deadlock, by default we use timeout setting
 // and retry mechanism internally to prevent this condition.
-func (mgr *Manager) Set(path string, size int64) error {
+func (mgr *Manager) Set(key string, size int64) error {
 	// First, we must make sure that the cache volume is able to
 	// fit the item. Or it is impossible to handle this cache item.
 	if size > mgr.cap {
@@ -54,14 +57,14 @@ func (mgr *Manager) Set(path string, size int64) error {
 	// will make its backend to handle it. If the cache volume does not has
 	// enough space, it will try cleaning up some space for it. After that,
 	// re-check if it is possible to insert the cache item.
-	return mgr.retryPutCache(path, size)
+	return mgr.retryPutCache(key, size)
 }
 
 // Get gets the cache item record from the cache volume. If it failed to
 // find the cache item. It returns a zero valued Item and error as ErrCacheMiss.
-func (mgr *Manager) Get(path string) (item Item, err error) {
+func (mgr *Manager) Get(key string) (item cache.Item, err error) {
 	mgr.rlockFn(func() {
-		item, err = mgr.db.Get(path)
+		item, err = mgr.db.Get(key)
 	})
 	return item, err
 }
@@ -70,7 +73,7 @@ func (mgr *Manager) Get(path string) (item Item, err error) {
 // been found, it will return it immediately. If not, it will invoke the given
 // lambda createFn to create the file cache, then insert it to the cache volume.
 // And finally, return the inserted cache item as result.
-func (mgr *Manager) Once(path string, createFn OnceHandler) (item Item, err error) {
+func (mgr *Manager) Once(path string, createFn OnceHandler) (item cache.Item, err error) {
 	mgr.rlockFn(func() {
 		item, err = mgr.db.Get(path)
 	})
@@ -128,13 +131,13 @@ func (mgr *Manager) preconditionCheck(size int64) error {
 	return nil
 }
 
-func (mgr *Manager) retryPutCache(path string, size int64) error {
+func (mgr *Manager) retryPutCache(key string, size int64) error {
 	return retry.Do(func() error {
-		return mgr.set(path, size)
+		return mgr.set(key, size)
 	}, mgr.retryOpts...)
 }
 
-func (mgr *Manager) set(path string, size int64) error {
+func (mgr *Manager) set(key string, size int64) error {
 	var (
 		db     = mgr.db
 		policy = mgr.policy
@@ -142,7 +145,7 @@ func (mgr *Manager) set(path string, size int64) error {
 
 	// Cache volume is able to fit the cache item.
 	if mgr.usage+size <= mgr.cap {
-		err := db.Put(path, size)
+		err := db.Put(key, size)
 		if err != nil {
 			return err
 		}
@@ -155,7 +158,7 @@ func (mgr *Manager) set(path string, size int64) error {
 
 	// When cache volume is unable to fit the cache item, emit
 	// a victim from the cache to cleanup some space for it.
-	var item Item
+	var item cache.Item
 	item, err := policy.Emit(db)
 	if err != nil {
 		return err
@@ -166,7 +169,7 @@ func (mgr *Manager) set(path string, size int64) error {
 		return err
 	}
 
-	err = db.Remove(item.Path)
+	err = db.Remove(item.Key)
 	if err != nil {
 		return err
 	}
@@ -180,7 +183,7 @@ func (mgr *Manager) set(path string, size int64) error {
 
 	// If the cache volume is able to fit the cache item after emiting
 	// a victim, then put it into the cache space.
-	err = db.Put(path, size)
+	err = db.Put(key, size)
 	if err != nil {
 		return err
 	}
