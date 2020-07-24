@@ -5,6 +5,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
+
+	retry "github.com/avast/retry-go"
 )
 
 func TestManager(t *testing.T) {
@@ -45,7 +48,12 @@ func TestManager(t *testing.T) {
 		}
 	}
 
-	mgr := New(200, db, RR())
+	mgr := New(Options{
+		Capacity:     200,
+		Backend:      db,
+		CachePolicy:  LRU(),
+		RetryOptions: nil,
+	})
 
 	for _, pair := range pairs {
 		if strings.Contains(pair.path, "a") {
@@ -63,7 +71,13 @@ func TestManager(t *testing.T) {
 
 func TestManagerCap(t *testing.T) {
 	cap := int64(1024)
-	mgr := New(cap, Hashmap(), LRU())
+	mgr := New(Options{
+		Capacity:     cap,
+		Backend:      Hashmap(),
+		CachePolicy:  LRU(),
+		RetryOptions: nil,
+	})
+
 	if mgr.Cap() != cap {
 		t.Errorf("expect %d, but get %d", cap, mgr.Cap())
 	}
@@ -71,7 +85,15 @@ func TestManagerCap(t *testing.T) {
 
 func TestManagerPut(t *testing.T) {
 	cap := int64(1000)
-	mgr := New(cap, Hashmap(), LRU())
+	mgr := New(Options{
+		Capacity:    cap,
+		Backend:     Hashmap(),
+		CachePolicy: LRU(),
+		RetryOptions: []retry.Option{
+			retry.Attempts(10),
+			retry.MaxDelay(10 * time.Millisecond),
+		},
+	})
 	err := mgr.Set("123", cap+1)
 	if err != ErrCacheTooLarge {
 		t.Errorf("expect %v, but get %v", ErrCacheTooLarge, err)
@@ -85,6 +107,12 @@ func TestManagerPut(t *testing.T) {
 	_, err = mgr.Get("456")
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	mgr.Register("456")
+	err = mgr.Set("789", 950)
+	if err == nil {
+		t.Error("expect impossible to fit the cache, but get no error")
 	}
 }
 
@@ -119,7 +147,12 @@ func TestManagerRegister(t *testing.T) {
 		}
 	}()
 
-	mgr := New(1000, Hashmap(), LRU())
+	mgr := New(Options{
+		Capacity:     1000,
+		Backend:      Hashmap(),
+		CachePolicy:  LRU(),
+		RetryOptions: nil,
+	})
 	for _, p := range pairs {
 		mgr.Register(p.path)
 		mgr.Unregister(p.path)
