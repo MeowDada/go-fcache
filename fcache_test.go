@@ -60,3 +60,72 @@ func TestManager(t *testing.T) {
 		}
 	}
 }
+
+func TestManagerCap(t *testing.T) {
+	cap := int64(1024)
+	mgr := New(cap, Hashmap(), LRU())
+	if mgr.Cap() != cap {
+		t.Errorf("expect %d, but get %d", cap, mgr.Cap())
+	}
+}
+
+func TestManagerPut(t *testing.T) {
+	cap := int64(1000)
+	mgr := New(cap, Hashmap(), LRU())
+	err := mgr.Set("123", cap+1)
+	if err != ErrCacheTooLarge {
+		t.Errorf("expect %v, but get %v", ErrCacheTooLarge, err)
+	}
+
+	err = mgr.Set("456", 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = mgr.Get("456")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestManagerRegister(t *testing.T) {
+	// Mock data.
+	pairs := []struct {
+		path string
+		size int64
+	}{
+		{"tmp/a", 500},
+		{"tmp/e", 600},
+		{"tmp/i", 700},
+		{"tmp/o", 800},
+		{"tmp/u", 900},
+	}
+
+	err := os.Mkdir("tmp", 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove("tmp")
+
+	for _, p := range pairs {
+		err := ioutil.WriteFile(p.path, nil, 0644)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	defer func() {
+		for _, p := range pairs {
+			os.Remove(p.path)
+		}
+	}()
+
+	mgr := New(1000, Hashmap(), LRU())
+	for _, p := range pairs {
+		mgr.Register(p.path)
+		mgr.Unregister(p.path)
+		err := mgr.Set(p.path, p.size)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}

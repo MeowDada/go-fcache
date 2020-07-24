@@ -7,6 +7,14 @@ import (
 )
 
 func TestBoltDB(t *testing.T) {
+
+	// Case1: Open boltDB failed.
+	_, err := BoltDB("/dev/null")
+	if err == nil {
+		t.Fatal("Should open db failed")
+	}
+
+	// Case2: Open a valid boltDB.
 	db, err := BoltDB("bolt.db")
 	if err != nil {
 		t.Fatal(err)

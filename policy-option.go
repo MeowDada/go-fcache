@@ -1,6 +1,8 @@
 package fcache
 
-import "time"
+import (
+	"time"
+)
 
 type validateOption struct {
 	AllowPsudo      bool

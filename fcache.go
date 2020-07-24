@@ -1,3 +1,5 @@
+// Package fcache provides utilities to manage file caches with limited
+// local cache volume.
 package fcache
 
 import (
