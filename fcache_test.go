@@ -8,6 +8,7 @@ import (
 	"time"
 
 	retry "github.com/avast/retry-go"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestManager(t *testing.T) {
@@ -92,6 +93,7 @@ func TestManagerPut(t *testing.T) {
 		RetryOptions: []retry.Option{
 			retry.Attempts(10),
 			retry.MaxDelay(10 * time.Millisecond),
+			retry.LastErrorOnly(true),
 		},
 	})
 	err := mgr.Set("123", cap+1)
@@ -214,5 +216,55 @@ func TestManagerRegister(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestManagerOnce(t *testing.T) {
+	target := NewItem("456", 60)
+	createFn := func(fn1 func(int64) error, fn2 func(string, int64) error) (Item, error) {
+		size := target.Size
+		if err := fn1(size); err != nil {
+			return Item{}, err
+		}
+
+		if err := fn2(target.Path, size); err != nil {
+			return Item{}, err
+		}
+		return target, nil
+	}
+
+	mgr := New(Options{
+		Capacity:    100,
+		Backend:     Hashmap(),
+		CachePolicy: LRU(),
+		RetryOptions: []retry.Option{
+			retry.LastErrorOnly(true),
+		},
+	})
+	err := mgr.Set("123", 40)
+	if err != nil {
+		t.Fatal(err)
+	}
+	item1, err := mgr.Once("123", createFn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item2, err := mgr.Get("123")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !cmp.Equal(item1, item2) {
+		t.Errorf("expect %v, but get %v", item2, item1)
+	}
+
+	item3, err := mgr.Once("456", createFn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !cmp.Equal(item3, target) {
+		t.Errorf("expect %v, but get %v", target, item3)
 	}
 }
