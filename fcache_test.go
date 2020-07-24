@@ -116,6 +116,60 @@ func TestManagerPut(t *testing.T) {
 	}
 }
 
+func TestManagerPutFailed(t *testing.T) {
+	mock := &mockDB{
+		put: func(path string, size int64) error {
+			return errMockErr
+		},
+	}
+	cap := int64(1000)
+	mgr := New(Options{
+		Capacity:    cap,
+		Backend:     mock,
+		CachePolicy: LRU(AllowPsudo()),
+		RetryOptions: []retry.Option{
+			retry.Attempts(10),
+			retry.MaxDelay(10 * time.Millisecond),
+			retry.LastErrorOnly(true),
+		},
+	})
+	err := mgr.Set("123", 456)
+	if err != errMockErr {
+		t.Fatalf("expect %v, but get %v", errMockErr, err)
+	}
+
+	mock.put = func(string, int64) error { return nil }
+	mock.rm = func(string) error { return errMockErr }
+	mock.iter = func(iterCb func(k string, v Item) error) error {
+		return nil
+	}
+	err = mgr.Set("123", 800)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = mgr.Set("789", 200)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = mgr.Set("456", 900)
+	if err != ErrNoEmitableCaches {
+		t.Fatalf("expect %v, but get %v", ErrNoEmitableCaches, err)
+	}
+
+	mock.iter = func(iterCb func(k string, v Item) error) error {
+		return iterCb("123", NewDummyItem("123"))
+	}
+	mock.rm = func(string) error {
+		return errMockErr
+	}
+
+	err = mgr.Set("456", 900)
+	if err != errMockErr {
+		t.Fatalf("expect %v, but get %v", errMockErr, err)
+	}
+}
+
 func TestManagerRegister(t *testing.T) {
 	// Mock data.
 	pairs := []struct {

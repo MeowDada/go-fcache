@@ -54,10 +54,76 @@ func TestBoltDB(t *testing.T) {
 	err = db.(*boltDB).iter(func(k, v []byte) error {
 		var item Item
 		item.Parse(v)
-		t.Log(item)
 		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// Case3: Get a unexist key.
+	_, err = db.Get("nop")
+	if err != ErrCacheMiss {
+		t.Errorf("expect %v, but get %v", ErrCacheMiss, err)
+	}
+
+	// Case4: Put a duplicate key.
+	err = db.Put("kwc", 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.Put("kwc", 500)
+	if err != ErrDupKey {
+		t.Fatalf("expect %v, but get %v", ErrDupKey, err)
+	}
+
+}
+
+func TestBoltDBIncrRef(t *testing.T) {
+	dbPath := "bolt.db"
+	db, err := BoltDB(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		db.Close()
+		os.Remove(dbPath)
+	}()
+
+	err = db.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.IncrRef("123")
+	if err == nil {
+		t.Error("expect non nil error, but get nil error")
+	}
+}
+
+func TestBoltDBDecrRef(t *testing.T) {
+	dbPath := "bolt.db"
+	db, err := BoltDB(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		db.Close()
+		os.Remove(dbPath)
+	}()
+
+	err = db.IncrRef("123")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.DecrRef("123")
+	if err == nil {
+		t.Error("expect non nil error, but get nil error")
 	}
 }

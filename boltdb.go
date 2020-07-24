@@ -26,9 +26,6 @@ func BoltDB(path string) (DB, error) {
 		_, err := tx.CreateBucketIfNotExists(str2bytes(boltDBBucket))
 		return err
 	})
-	if err != nil {
-		return nil, db.Close()
-	}
 
 	return &boltDB{
 		DB:     db,
@@ -152,7 +149,6 @@ func (db *boltDB) DecrRef(keys ...string) error {
 				return err
 			}
 		}
-
 		return nil
 	})
 }

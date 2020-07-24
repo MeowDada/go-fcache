@@ -17,3 +17,5 @@ var ErrNoEmitableCaches = errors.New("no emitable caches")
 var ErrCacheMiss = errors.New("cache miss")
 
 var errRetry = errors.New("keep retrying")
+
+var errMockErr = errors.New("mock error")

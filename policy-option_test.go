@@ -57,6 +57,7 @@ func TestPolicyOptions(t *testing.T) {
 	// Case4: MinimalLivedTime option
 	h.IncrRef("def")
 	h.DecrRef("def")
+	time.Sleep(time.Millisecond)
 	rr = RR(AllowPsudo(), MinimalLiveTime(time.Nanosecond))
 	_, err = rr.Emit(h)
 	if err != nil {
