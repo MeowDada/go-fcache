@@ -268,3 +268,18 @@ func TestManagerOnce(t *testing.T) {
 		t.Errorf("expect %v, but get %v", target, item3)
 	}
 }
+
+func TestManagerPreconditionCheck(t *testing.T) {
+	mgr := New(Options{
+		Capacity:    100,
+		Backend:     Hashmap(),
+		CachePolicy: LRU(),
+		RetryOptions: []retry.Option{
+			retry.LastErrorOnly(true),
+		},
+	})
+	err := mgr.preconditionCheck(200)
+	if err != ErrCacheTooLarge {
+		t.Errorf("expect %v, but get %v", ErrCacheTooLarge, err)
+	}
+}
