@@ -23,6 +23,8 @@ Though we cannot lock a file physically, we still can ensures that NOT TO remove
 With this feature can we guarantee that any reading operations on this file should process properly (unless the disk physicall go down).
 
 And with default setting, any referenced file cache won't be removed (emitted) at any time.
+## Cache volume capacity
+Setup an upper bound of cache volume capacity to make sures that the cache manager will not hold caches that exceed the limitation.
 
 # Goal
 * Concurrent safe
@@ -33,7 +35,67 @@ And with default setting, any referenced file cache won't be removed (emitted) a
 This project is still at very early stage. DO NOT use it for production environment. Any API interface may changes during development.
 
 # Examples
-* TODO
+## Simple cache manager
+Creates a file cache manager to manages file caches with limited cache volume.
+```go
+import (
+    fcache "github.com/meowdada/go-fcache"
+    humanize "github.com/dustin/go-humanize"
+)
+
+// Creates a cache manager with capacity 2GiB, using hashmap as backend, with
+// LRU cache replacement policy and default retry option when failed to emit a cache.
+mgr := fcache.New(fcache.Options{
+    Capacity:     int64(2*humanize.GiByte)
+    Backend:      fcache.Hashmap(),
+    CachePolicy:  fcache.LRU(),
+    RetryOptions: nil,
+})
+
+// Adds a file path/to/file with its size as a file cache.
+err := mgr.Set("path/to/file", int64(humanized.GiByte))
+if err != nil {
+    // Handle put error here...
+}
+
+// Try getting a file cache from given path. If the cache is missing,
+// it will return error as fcache.ErrCacheMiss
+item, err := mgr.Get("path/to/file")
+if err != nil {
+    // Handle get error here...
+}
+```
+
+## File cache locking
+Creates a file cache manager and locks a file to make sure that it will not be
+emited from the cache volume.
+```go
+import (
+    fcache "github.com/meowdada/go-fcache"
+)
+
+mgr := fcache.New(fcache.Options{
+    Capacity:     100,
+    Backend:      fcache.Hashmap(),
+    CachePolicy:  fcache.RR(),
+    RetryOptions: nil,
+})
+
+// Adds 3 files as caches
+mgr.Set("path/to/file1", 70)
+mgr.Set("path/to/file2", 20)
+mgr.Set("path/to/file3", 10)
+
+// Lock the file "path/to/file1" to ensure that not to emit this file cache
+// from the cache volume. (Maybe some other applications are reading "path/to/file1"'s
+// content, so we need to lock it or it may be removed from the disk. )
+mgr.Register("path/to/file1")
+
+// Adds file cache with size = 30 bytes, file cache "path/to/file2" and 
+// "path/to/file3" should be clean up the manager. 
+mgr.Set("path/to/file4", 30)
+```
+
 
 # Performance
 * TODO
