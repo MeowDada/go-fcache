@@ -3,7 +3,7 @@ package gomap
 import (
 	"sync"
 
-	"github.com/meowdada/go-fcache/backend"
+	"github.com/meowdada/go-fcache/cache"
 	"github.com/meowdada/go-fcache/pkg/ioutil"
 )
 
@@ -38,7 +38,7 @@ func (m *Map) Get(k []byte) (v []byte, e error) {
 	if ok {
 		return v, nil
 	}
-	return nil, backend.ErrNoSuchKey
+	return nil, cache.ErrNoSuchKey
 }
 
 // Remove is a concurrent safe method which removes an entry

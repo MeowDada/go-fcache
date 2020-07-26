@@ -7,8 +7,9 @@ import (
 )
 
 // New creates a file with given key and size.
-func New(key string, size int64) Item {
+func New(id int64, key string, size int64) Item {
 	return Item{
+		ID:        id,
 		Key:       key,
 		Path:      key,
 		Size:      size,
@@ -20,8 +21,9 @@ func New(key string, size int64) Item {
 }
 
 // Dummy creates a file with given key.
-func Dummy(key string) Item {
+func Dummy(id int64, key string) Item {
 	return Item{
+		ID:   id,
 		Key:  key,
 		Path: key,
 		Size: 0,
@@ -33,6 +35,7 @@ func Dummy(key string) Item {
 // Item implements Item interface. It represents
 // a file cache item.
 type Item struct {
+	ID        int64
 	Key       string
 	Path      string
 	Size      int64

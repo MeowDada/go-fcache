@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/meowdada/go-fcache/backend"
+	"github.com/meowdada/go-fcache/cache"
 )
 
 func TestPut(t *testing.T) {
@@ -75,7 +75,7 @@ func TestGet(t *testing.T) {
 			New(),
 			[]byte("hello"),
 			nil,
-			backend.ErrNoSuchKey,
+			cache.ErrNoSuchKey,
 		},
 		{
 			"get nil key",
@@ -135,7 +135,7 @@ func TestRemove(t *testing.T) {
 		}
 
 		_, err = tc.m.Get(tc.k)
-		if err != backend.ErrNoSuchKey {
+		if err != cache.ErrNoSuchKey {
 			t.Errorf("[Case#%d] %s: expect key %s to be deleted, but it does not", idx, desc, tc.k)
 		}
 	}
@@ -168,7 +168,7 @@ func TestIter(t *testing.T) {
 				iterCb := func(k, v []byte) error {
 					_, ok := list[string(k)]
 					if !ok {
-						return backend.ErrNoSuchKey
+						return cache.ErrNoSuchKey
 					}
 					return nil
 				}

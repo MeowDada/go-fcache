@@ -11,12 +11,14 @@ func Adapter(store Store, codec codec.Codec) cache.DB {
 	return &adapter{
 		backend: store,
 		codec:   codec,
+		idgen:   newSnowflake(0),
 	}
 }
 
 type adapter struct {
 	backend Store
 	codec   codec.Codec
+	idgen   IDGenerator
 }
 
 func (ada *adapter) Iter(iterCb func(k string, v cache.Item) error) error {
@@ -104,7 +106,8 @@ func (ada *adapter) IncrRef(keys ...string) error {
 		}
 
 		// If the key does not present, then create a dummy one.
-		item := cache.Dummy(key)
+		id := ada.idgen.Get()
+		item := cache.Dummy(id, key)
 		item.IncrRef()
 		item.IncrUsed()
 		item.UpdateLastUsed()
@@ -127,10 +130,10 @@ func (ada *adapter) DecrRef(keys ...string) error {
 		v, err := b.Get(k)
 
 		// If the key does not present, then ignore it.
-		if err == ErrNoSuchKey {
+		if err == cache.ErrNoSuchKey {
 			continue
 		}
-		if err != nil && err != ErrNoSuchKey {
+		if err != nil && err != cache.ErrNoSuchKey {
 			return err
 		}
 
@@ -163,7 +166,8 @@ func (ada *adapter) marshalItem(item cache.Item) []byte {
 }
 
 func (ada *adapter) newMarshaledItem(key string, size int64) []byte {
-	item := cache.New(key, size)
+	id := ada.idgen.Get()
+	item := cache.New(id, key, size)
 	data, _ := ada.codec.Marshal(item)
 	return data
 }

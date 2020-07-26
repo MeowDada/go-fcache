@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"github.com/pkg/errors"
+	"github.com/meowdada/go-fcache/cache"
 )
 
 // Store is a storage backend interface which provides some
@@ -14,10 +14,7 @@ type Store interface {
 	Close() error
 }
 
-// ErrNoSuchKey raises when try accessing a Store with key nonexist.
-var ErrNoSuchKey = errors.New("no such key")
-
 // IsNoKeyError returns true if the key reprsents ErrNoSuchKey.
 func IsNoKeyError(err error) bool {
-	return err == ErrNoSuchKey
+	return err == cache.ErrNoSuchKey
 }
