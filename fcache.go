@@ -15,6 +15,7 @@ import (
 type OnceHandler func(
 	preconditionCheck func(item cache.Item) error,
 	putCacheFn func(path string, size int64) error,
+	rollback func(path string) error,
 ) (cache.Item, error)
 
 // Manager manages transactions of file caches.
@@ -83,7 +84,7 @@ func (mgr *Manager) Once(path string, createFn OnceHandler) (item cache.Item, er
 	if err == nil {
 		return item, err
 	}
-	return createFn(mgr.preconditionCheck, mgr.retryPutCache)
+	return createFn(mgr.preconditionCheck, mgr.retryPutCache, mgr.rollback)
 }
 
 // Register register file caches with their key and increment their
@@ -192,4 +193,11 @@ func (mgr *Manager) set(key string, size int64) error {
 	}
 	mgr.usage += size
 	return nil
+}
+
+func (mgr *Manager) rollback(key string) (err error) {
+	mgr.lockFn(func() {
+		err = mgr.db.Remove(key)
+	})
+	return err
 }

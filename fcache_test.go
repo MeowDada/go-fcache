@@ -191,6 +191,7 @@ func TestManagerOnce(t *testing.T) {
 				handler := func(
 					preconditionCheck func(cache.Item) error,
 					putCacheFn func(path string, size int64) error,
+					rollback func(path string) error,
 				) (cache.Item, error) {
 					item := cache.New(123, "123", 456)
 					return item, nil
