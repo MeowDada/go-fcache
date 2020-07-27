@@ -1,6 +1,8 @@
 package policy
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -66,5 +68,31 @@ func TestPolicyOptions(t *testing.T) {
 	_, err = rr.Emit(h)
 	if err != ErrNoEmitableCaches {
 		t.Errorf("expect %v, but get %v", ErrNoEmitableCaches, err)
+	}
+}
+
+func TestPolicyAllowReferenced(t *testing.T) {
+	db := backend.Adapter(gomap.New(), codec.Gob{})
+
+	err := ioutil.WriteFile("test123", nil, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove("test123")
+
+	err = db.Put("test123", 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.IncrRef("test123")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := RR()
+	v, err := rr.Emit(db)
+	if err == nil {
+		t.Fatalf("expect evict no cache item, but get %v", v)
 	}
 }
