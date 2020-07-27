@@ -12,7 +12,10 @@ import (
 )
 
 // OnceHandler is a handler for once method.
-type OnceHandler func(preconditionCheck func(size int64) error, putCacheFn func(path string, size int64) error) (cache.Item, error)
+type OnceHandler func(
+	preconditionCheck func(item cache.Item) error,
+	putCacheFn func(path string, size int64) error,
+) (cache.Item, error)
 
 // Manager manages transactions of file caches.
 type Manager struct {
@@ -124,8 +127,8 @@ func (mgr *Manager) rlockFn(fn func()) {
 	mgr.mu.RUnlock()
 }
 
-func (mgr *Manager) preconditionCheck(size int64) error {
-	if size > mgr.cap {
+func (mgr *Manager) preconditionCheck(item cache.Item) error {
+	if item.Size > mgr.cap {
 		return ErrCacheTooLarge
 	}
 	return nil
