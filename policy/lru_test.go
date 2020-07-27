@@ -2,6 +2,7 @@ package policy
 
 import (
 	"testing"
+	"time"
 
 	"github.com/meowdada/go-fcache/backend"
 	"github.com/meowdada/go-fcache/backend/gomap"
@@ -36,6 +37,7 @@ func TestCacheReplacementAlgoLRU(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		time.Sleep(time.Millisecond)
 		err = db.DecrRef(pair.path)
 		if err != nil {
 			t.Fatal(err)
