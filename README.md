@@ -28,6 +28,7 @@ focusing file cache only, and guaranteens that not to evict the referenced cache
 
 ## Built-in cache replacement algorithms
 * FIFO (First-in-first-out)
+* LIFO (Last-in-first-out)
 * LRU (Least Recently Used)
 * MRU (Most Recently Used)
 * RR (Random Replacement)

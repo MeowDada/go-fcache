@@ -29,6 +29,7 @@ go-fcache
 ## 快取演算法
 目前為止, 內建支援的快取演算法如下:
 * FIFO (First-in-first-out)
+* LIFO (Last-in-first-out)
 * LRU (Least Recently Used)
 * MRU (Most Recently Used)
 * RR (Random Replacement)
