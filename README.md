@@ -34,6 +34,7 @@ focusing file cache only, and guaranteens that not to evict the referenced cache
 
 ## Built-in backend
 * [gomap](https://github.com/MeowDada/go-fcache/blob/master/backend/gomap/gomap.go) (its actually a golang build-in map with locking)
+* [boltdb](https://github.com/MeowDada/go-fcache/blob/master/backend/boltdb/boltdb.go) (https://github.com/etcd-io/bbolt)
 
 ## Customization
 ### How to customize a cache replacement algorithm

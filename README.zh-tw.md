@@ -36,6 +36,7 @@ go-fcache
 ## 儲存後端
 目前為止, 內建支援的儲存後端如下:
 * [gomap](https://github.com/MeowDada/go-fcache/blob/master/backend/gomap/gomap.go) (其實就是golang build-in的map, 只是加了鎖)
+* [boltdb](https://github.com/MeowDada/go-fcache/blob/master/backend/boltdb/boltdb.go) (https://github.com/etcd-io/bbolt)
 
 ## 自定義 
 ### 如何自定義快取演算法
