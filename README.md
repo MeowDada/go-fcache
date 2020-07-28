@@ -75,6 +75,9 @@ type Store interface {
 ```
 Note that you must return cache.ErrNoSuchKey when cache is missing, or the functionalities might break up.
 
+## Project Status
+The project is still under developing, any APIs might changes before stable version. In addition, the library has not been well-tested. DO NOT use it for production environment.
+
 ## Examples
 ### Simple cache manager
 Creates a file cache manager to manages file caches with limited cache volume.
