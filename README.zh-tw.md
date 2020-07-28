@@ -46,13 +46,13 @@ go-fcache
 import "github.com/meowdada/go-fcache/cache"
 
 type Policy interface {
-	Emit(db cache.DB) (cache.Item, error)
+	Evict(pool cache.Pool) (cache.Item, error)
 }
 ```
 
-而 `cache.DB` 又提供了以下APIs:
+而 `cache.Pool` 又提供了以下APIs:
 ```golang
-type DB interface {
+type Pool interface {
 	Iter(iterCb func(k string, v Item) error) error
 	Put(key string, size int64) error
 	Get(key string) (Item, error)
@@ -62,7 +62,7 @@ type DB interface {
 	Close() error
 }
 ```
-通常情況只須使用到 `DB.Iter` 函式就足以實作自己的快取演算法.
+通常情況只須使用到 `Pool.Iter` 函式就足以實作自己的快取演算法.
 
 ### 如何自定義儲存後端
 任何實作以下界面的資料結構, 皆可作為儲存後端

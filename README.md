@@ -44,13 +44,13 @@ Every object which implements cache.Policy interface could be used as a cache re
 import "github.com/meowdada/go-fcache/cache"
 
 type Policy interface {
-	Emit(db cache.DB) (cache.Item, error)
+	Evict(pool cache.Pool) (cache.Item, error)
 }
 ```
 
-And `cache.DB` provides following APIs:
+And `cache.Pool` provides following APIs:
 ```golang
-type DB interface {
+type Pool interface {
 	Iter(iterCb func(k string, v Item) error) error
 	Put(key string, size int64) error
 	Get(key string) (Item, error)
@@ -60,7 +60,7 @@ type DB interface {
 	Close() error
 }
 ```
-In most cases, only `DB.Iter` needs to be invoked to implement a cache replacement algorithm.
+In most cases, only `Pool.Iter` needs to be invoked to implement a cache replacement algorithm.
 
 ### How to customize a storing backend.
 Every object which implements `backend.Store` interface could be refered as a storing backend.
