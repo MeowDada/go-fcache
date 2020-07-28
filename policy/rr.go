@@ -16,8 +16,8 @@ func RR(opts ...Option) Policy {
 }
 
 // Emit implements MRU cache replacement policy.
-func (rr rr) Emit(db cache.DB) (victim cache.Item, err error) {
-	err = db.Iter(func(k string, v cache.Item) error {
+func (rr rr) Evict(pool cache.Pool) (victim cache.Item, err error) {
+	err = pool.Iter(func(k string, v cache.Item) error {
 		if !rr.validator(v) {
 			return nil
 		}

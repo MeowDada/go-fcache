@@ -43,7 +43,7 @@ func TestCacheReplacementAlgoRR(t *testing.T) {
 	}
 
 	rr := RR()
-	item, err := rr.Emit(db)
+	item, err := rr.Evict(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestCacheReplacementAlgoRRError(t *testing.T) {
 	db := backend.Adapter(gomap.New(), codec.Gob{})
 	db.IncrRef("123")
 	rr := RR()
-	_, err := rr.Emit(db)
+	_, err := rr.Evict(db)
 	if err == nil {
 		t.Errorf("expect err = %v, but get nil", ErrNoEmitableCaches)
 	}

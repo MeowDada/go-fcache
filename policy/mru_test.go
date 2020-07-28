@@ -45,7 +45,7 @@ func TestCacheReplacementAlgoMRU(t *testing.T) {
 	}
 
 	mru := MRU()
-	item, err := mru.Emit(db)
+	item, err := mru.Evict(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestCacheReplacementAlgoMRUError(t *testing.T) {
 	db := backend.Adapter(gomap.New(), codec.Gob{})
 	db.IncrRef("123")
 	mru := MRU()
-	_, err := mru.Emit(db)
+	_, err := mru.Evict(db)
 	if err == nil {
 		t.Errorf("expect err = %v, but get nil", ErrNoEmitableCaches)
 	}

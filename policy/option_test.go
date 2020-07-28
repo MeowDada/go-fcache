@@ -25,7 +25,7 @@ func TestPolicyOptions(t *testing.T) {
 	}
 
 	rr := RR(AllowPsudo())
-	_, err = rr.Emit(h)
+	_, err = rr.Evict(h)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func TestPolicyOptions(t *testing.T) {
 	}
 
 	rr = RR(AllowPsudo(), AllowReferenced())
-	_, err = rr.Emit(h)
+	_, err = rr.Evict(h)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestPolicyOptions(t *testing.T) {
 	h.DecrRef("abc")
 	h.DecrRef("abc")
 	rr = RR(AllowPsudo(), MinimalUsed(3))
-	_, err = rr.Emit(h)
+	_, err = rr.Evict(h)
 	if err != ErrNoEmitableCaches {
 		t.Errorf("execpt %v, but get %v", ErrNoEmitableCaches, err)
 	}
@@ -65,7 +65,7 @@ func TestPolicyOptions(t *testing.T) {
 	h.Put("def", 100)
 	time.Sleep(time.Millisecond)
 	rr = RR(AllowPsudo(), MinimalLiveTime(time.Second))
-	_, err = rr.Emit(h)
+	_, err = rr.Evict(h)
 	if err != ErrNoEmitableCaches {
 		t.Errorf("expect %v, but get %v", ErrNoEmitableCaches, err)
 	}
@@ -91,7 +91,7 @@ func TestPolicyAllowReferenced(t *testing.T) {
 	}
 
 	rr := RR()
-	v, err := rr.Emit(db)
+	v, err := rr.Evict(db)
 	if err == nil {
 		t.Fatalf("expect evict no cache item, but get %v", v)
 	}

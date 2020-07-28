@@ -35,7 +35,7 @@ func TestCacheReplacementAlgoFIFO(t *testing.T) {
 	}
 
 	fifo := FIFO()
-	item, err := fifo.Emit(db)
+	item, err := fifo.Evict(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestCacheReplacementAlgoFIFOError(t *testing.T) {
 	db := backend.Adapter(gomap.New(), codec.Gob{})
 	db.IncrRef("123")
 	fifo := FIFO()
-	_, err := fifo.Emit(db)
+	_, err := fifo.Evict(db)
 	if err == nil {
 		t.Errorf("expect err = %v, but get nil", ErrNoEmitableCaches)
 	}

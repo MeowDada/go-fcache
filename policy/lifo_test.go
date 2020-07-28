@@ -37,7 +37,7 @@ func TestCacheReplacementAlgoLIFO(t *testing.T) {
 	}
 
 	lifo := LIFO()
-	item, err := lifo.Emit(db)
+	item, err := lifo.Evict(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestCacheReplacementAlgoLIFOError(t *testing.T) {
 	db := backend.Adapter(gomap.New(), codec.Gob{})
 	db.IncrRef("123")
 	lifo := LIFO()
-	_, err := lifo.Emit(db)
+	_, err := lifo.Evict(db)
 	if err == nil {
 		t.Errorf("expect err = %v, but get nil", ErrNoEmitableCaches)
 	}

@@ -22,7 +22,7 @@ type OnceHandler func(
 type Manager struct {
 	cap       int64
 	usage     int64
-	db        cache.DB
+	pool      cache.Pool
 	policy    policy.Policy
 	retryOpts []retry.Option
 	mu        sync.RWMutex
@@ -32,7 +32,7 @@ type Manager struct {
 func New(opts Options) *Manager {
 	return &Manager{
 		cap:       opts.Capacity,
-		db:        backend.Adapter(opts.Backend, opts.Codec),
+		pool:      backend.Adapter(opts.Backend, opts.Codec),
 		policy:    opts.CachePolicy,
 		retryOpts: opts.RetryOptions,
 	}
@@ -68,7 +68,7 @@ func (mgr *Manager) Set(key string, size int64) error {
 // find the cache item. It returns a zero valued Item and error as ErrCacheMiss.
 func (mgr *Manager) Get(key string) (item cache.Item, err error) {
 	mgr.rlockFn(func() {
-		item, err = mgr.db.Get(key)
+		item, err = mgr.pool.Get(key)
 	})
 	return item, err
 }
@@ -79,7 +79,7 @@ func (mgr *Manager) Get(key string) (item cache.Item, err error) {
 // And finally, return the inserted cache item as result.
 func (mgr *Manager) Once(path string, createFn OnceHandler) (item cache.Item, err error) {
 	mgr.rlockFn(func() {
-		item, err = mgr.db.Get(path)
+		item, err = mgr.pool.Get(path)
 	})
 	if err == nil {
 		return item, err
@@ -109,11 +109,11 @@ func (mgr *Manager) Unregister(keys ...string) {
 }
 
 func (mgr *Manager) register(keys ...string) {
-	mgr.db.IncrRef(keys...)
+	mgr.pool.IncrRef(keys...)
 }
 
 func (mgr *Manager) unregister(keys ...string) {
-	mgr.db.DecrRef(keys...)
+	mgr.pool.DecrRef(keys...)
 }
 
 func (mgr *Manager) lockFn(fn func()) {
@@ -143,13 +143,13 @@ func (mgr *Manager) retryPutCache(key string, size int64) error {
 
 func (mgr *Manager) set(key string, size int64) error {
 	var (
-		db     = mgr.db
+		pool   = mgr.pool
 		policy = mgr.policy
 	)
 
 	// Cache volume is able to fit the cache item.
 	if mgr.usage+size <= mgr.cap {
-		err := db.Put(key, size)
+		err := pool.Put(key, size)
 		if err != nil {
 			return err
 		}
@@ -163,7 +163,7 @@ func (mgr *Manager) set(key string, size int64) error {
 	// When cache volume is unable to fit the cache item, emit
 	// a victim from the cache to cleanup some space for it.
 	var item cache.Item
-	item, err := policy.Emit(db)
+	item, err := policy.Evict(pool)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (mgr *Manager) set(key string, size int64) error {
 		return err
 	}
 
-	err = db.Remove(item.Key)
+	err = pool.Remove(item.Key)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (mgr *Manager) set(key string, size int64) error {
 
 	// If the cache volume is able to fit the cache item after emitting
 	// a victim, then put it into the cache space.
-	err = db.Put(key, size)
+	err = pool.Put(key, size)
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func (mgr *Manager) set(key string, size int64) error {
 
 func (mgr *Manager) rollback(key string) (err error) {
 	mgr.lockFn(func() {
-		err = mgr.db.Remove(key)
+		err = mgr.pool.Remove(key)
 	})
 	return err
 }

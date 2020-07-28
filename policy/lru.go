@@ -18,9 +18,9 @@ func LRU(opts ...Option) Policy {
 }
 
 // Emit implements LRU cache replacement policy.
-func (lru lru) Emit(db cache.DB) (victim cache.Item, err error) {
+func (lru lru) Evict(pool cache.Pool) (victim cache.Item, err error) {
 	least := time.Now()
-	err = db.Iter(func(k string, v cache.Item) error {
+	err = pool.Iter(func(k string, v cache.Item) error {
 		if !lru.validator(v) {
 			return nil
 		}

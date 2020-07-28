@@ -7,7 +7,7 @@ import (
 )
 
 // Adapter creates an adapter for cache.DB.
-func Adapter(store Store, codec codec.Codec) cache.DB {
+func Adapter(store Store, codec codec.Codec) cache.Pool {
 	return &adapter{
 		backend: store,
 		codec:   codec,

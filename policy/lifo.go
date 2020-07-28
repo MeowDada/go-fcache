@@ -18,9 +18,9 @@ func LIFO(opts ...Option) Policy {
 }
 
 // Emit implements LIFO cache replacement policy.
-func (lifo lifo) Emit(db cache.DB) (victim cache.Item, err error) {
+func (lifo lifo) Evict(pool cache.Pool) (victim cache.Item, err error) {
 	t := time.Time{}
-	err = db.Iter(func(k string, v cache.Item) error {
+	err = pool.Iter(func(k string, v cache.Item) error {
 		if !lifo.validator(v) {
 			return nil
 		}

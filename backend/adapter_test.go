@@ -11,7 +11,7 @@ import (
 func TestAdapterIter(t *testing.T) {
 	testcases := []struct {
 		description string
-		adapter     cache.DB
+		adapter     cache.Pool
 		iterFn      func(k string, v cache.Item) error
 		expectErr   error
 	}{

@@ -17,10 +17,10 @@ func FIFO(opts ...Option) Policy {
 	return fifo{validator: opt.Validate}
 }
 
-// Emit implements FIFO cache replacement policy.
-func (fifo fifo) Emit(db cache.DB) (victim cache.Item, err error) {
+// Evict implements FIFO cache replacement policy.
+func (fifo fifo) Evict(pool cache.Pool) (victim cache.Item, err error) {
 	least := time.Now()
-	err = db.Iter(func(k string, v cache.Item) error {
+	err = pool.Iter(func(k string, v cache.Item) error {
 		if !fifo.validator(v) {
 			return nil
 		}
