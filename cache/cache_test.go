@@ -132,6 +132,12 @@ func TestRemove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	item2 := New(789, "123", 456)
+	err = item2.Remove()
+	if err == nil {
+		t.Errorf("expect error raise, but get no error")
+	}
 }
 
 func TestIsReal(t *testing.T) {

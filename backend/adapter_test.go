@@ -193,6 +193,18 @@ func TestAdapterIncrRef(t *testing.T) {
 			nil,
 		},
 		{
+			"valid incr reference count of existing items",
+			func() error {
+				ada := Adapter(gomap.New(), codec.Gob{})
+				err := ada.Put("123", 456)
+				if err != nil {
+					return err
+				}
+				return ada.IncrRef("123", "456", "789")
+			},
+			nil,
+		},
+		{
 			"error when inner put dummy",
 			func() error {
 				ada := Adapter(Mock{
@@ -272,6 +284,30 @@ func TestAdapterDecrRef(t *testing.T) {
 				m := gomap.New()
 				ada := Adapter(Mock{
 					PutHandler: func(k, v []byte) error { return errMock },
+					GetHandler: m.Get,
+				}, codec.Gob{})
+
+				err := ada.IncrRef("123")
+				if err != nil {
+					return err
+				}
+				return ada.DecrRef("123")
+			},
+			errMock,
+		},
+		{
+			"error when decr inner put",
+			func() error {
+				ok := true
+				m := gomap.New()
+				ada := Adapter(Mock{
+					PutHandler: func(k, v []byte) error {
+						if ok {
+							ok = false
+							return m.Put(k, v)
+						}
+						return errMock
+					},
 					GetHandler: m.Get,
 				}, codec.Gob{})
 
