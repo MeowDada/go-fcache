@@ -109,7 +109,7 @@ func (f *Item) IsReal() bool {
 	return f.Real
 }
 
-// SetReal makes the cache item become a concret one.
+// SetReal makes the cache item become a concrete one.
 func (f *Item) SetReal() {
 	f.Real = true
 }
