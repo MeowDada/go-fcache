@@ -17,8 +17,8 @@ func TestAdapterIter(t *testing.T) {
 	}{
 		{
 			"valid iter",
-			Adapter(mock{
-				iter: func(func(k, v []byte) error) error { return nil },
+			Adapter(Mock{
+				IterHandler: func(func(k, v []byte) error) error { return nil },
 			}, codec.Mock{
 				UnmarshalFn: func(b []byte, v interface{}) error { return nil },
 			}),
@@ -27,8 +27,8 @@ func TestAdapterIter(t *testing.T) {
 		},
 		{
 			"iterFn with error",
-			Adapter(mock{
-				iter: func(iterFn func(k, v []byte) error) error {
+			Adapter(Mock{
+				IterHandler: func(iterFn func(k, v []byte) error) error {
 					return iterFn(nil, nil)
 				},
 			}, codec.Mock{
@@ -195,9 +195,9 @@ func TestAdapterIncrRef(t *testing.T) {
 		{
 			"error when inner put dummy",
 			func() error {
-				ada := Adapter(mock{
-					put: func(k, v []byte) error { return errMock },
-					get: func(k []byte) ([]byte, error) { return nil, cache.ErrNoSuchKey },
+				ada := Adapter(Mock{
+					PutHandler: func(k, v []byte) error { return errMock },
+					GetHandler: func(k []byte) ([]byte, error) { return nil, cache.ErrNoSuchKey },
 				}, codec.Gob{})
 
 				return ada.IncrRef("123", "456", "789")
@@ -207,9 +207,9 @@ func TestAdapterIncrRef(t *testing.T) {
 		{
 			"error when inner put real",
 			func() error {
-				ada := Adapter(mock{
-					put: func(k, v []byte) error { return errMock },
-					get: func(k []byte) ([]byte, error) {
+				ada := Adapter(Mock{
+					PutHandler: func(k, v []byte) error { return errMock },
+					GetHandler: func(k []byte) ([]byte, error) {
 						item := cache.New(123, "123", 123)
 						codec := codec.Gob{}
 						return codec.Marshal(item)
@@ -246,8 +246,8 @@ func TestAdapterDecrRef(t *testing.T) {
 		{
 			"error when inner get",
 			func() error {
-				ada := Adapter(mock{
-					get: func(k []byte) ([]byte, error) { return nil, errMock },
+				ada := Adapter(Mock{
+					GetHandler: func(k []byte) ([]byte, error) { return nil, errMock },
 				}, codec.Gob{})
 
 				return ada.DecrRef("123", "456", "789")
@@ -270,9 +270,9 @@ func TestAdapterDecrRef(t *testing.T) {
 			"error when decr inner put",
 			func() error {
 				m := gomap.New()
-				ada := Adapter(mock{
-					put: func(k, v []byte) error { return errMock },
-					get: m.Get,
+				ada := Adapter(Mock{
+					PutHandler: func(k, v []byte) error { return errMock },
+					GetHandler: m.Get,
 				}, codec.Gob{})
 
 				err := ada.IncrRef("123")
