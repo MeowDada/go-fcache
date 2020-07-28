@@ -185,7 +185,7 @@ func (mgr *Manager) set(key string, size int64) error {
 		return errRetry
 	}
 
-	// If the cache volume is able to fit the cache item after emiting
+	// If the cache volume is able to fit the cache item after emitting
 	// a victim, then put it into the cache space.
 	err = db.Put(key, size)
 	if err != nil {

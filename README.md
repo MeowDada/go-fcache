@@ -11,7 +11,7 @@ go-fcache is a file cache library implemented by pure Go. This package provides 
 ## Motivation
 There are many existing and awesome caching libraries implemented in Go, such as [go-cache](https://github.com/patrickmn/go-cache), [bigCache](https://github.com/allegro/bigcache), [redis-cache](https://github.com/go-redis/cache) ...etc.
 
-But most of them stored data in memory instead of a file. Some of them do not handle the upper bound of what they can store. Furthermore, cache replacement mechanism is also hide from user, so we cannot substitute it easily. And the most important thing is that they can merely guarantee that not to evit the caches which are used by others. This might leads severe errors when developing a storage related application.
+But most of them stored data in memory instead of a file. Some of them do not handle the upper bound of what they can store. Furthermore, cache replacement mechanism is also hide from user, so we cannot substitute it easily. And the most important thing is that they can merely guarantee that not to evict the caches which are used by others. This might leads severe errors when developing a storage related application.
 
 Due to the reasons above, `go-fcache` comes up with
 focusing file cache only, and guaranteens that not to evict the referenced cache item from cache volume.
