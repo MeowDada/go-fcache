@@ -26,7 +26,7 @@ func (ada *adapter) Iter(iterCb func(k string, v cache.Item) error) error {
 		b = ada.backend
 	)
 	return b.Iter(func(k, v []byte) error {
-		item := ada.parse(v)
+		item := ada.mustParse(v)
 		return iterCb(ioutil.Bytes2Str(k), item)
 	})
 }
@@ -45,7 +45,7 @@ func (ada *adapter) Put(key string, size int64) error {
 	}
 
 	// Deserialize the stored data.
-	item := ada.parse(v)
+	item := ada.mustParse(v)
 
 	// If it is a psudo item, then convert it into
 	// a real one.
@@ -53,7 +53,7 @@ func (ada *adapter) Put(key string, size int64) error {
 		item.SetReal()
 		item.SetSize(size)
 		item.UpdateCreatedAt()
-		v = ada.marshalItem(item)
+		v = ada.mustMarshalItem(item)
 		return b.Put(k, v)
 	}
 
@@ -71,7 +71,7 @@ func (ada *adapter) Get(key string) (cache.Item, error) {
 		return cache.Item{}, err
 	}
 
-	item := ada.parse(v)
+	item := ada.mustParse(v)
 	return item, nil
 }
 
@@ -94,12 +94,12 @@ func (ada *adapter) IncrRef(keys ...string) error {
 
 		// If the key presents, then update this cache item.
 		if err == nil {
-			item := ada.parse(v)
+			item := ada.mustParse(v)
 			item.IncrRef()
 			item.IncrUsed()
 			item.UpdateLastUsed()
 
-			if err := b.Put(k, ada.marshalItem(item)); err != nil {
+			if err := b.Put(k, ada.mustMarshalItem(item)); err != nil {
 				return err
 			}
 			continue
@@ -112,7 +112,7 @@ func (ada *adapter) IncrRef(keys ...string) error {
 		item.IncrUsed()
 		item.UpdateLastUsed()
 
-		err = b.Put(k, ada.marshalItem(item))
+		err = b.Put(k, ada.mustMarshalItem(item))
 		if err != nil {
 			return err
 		}
@@ -137,12 +137,12 @@ func (ada *adapter) DecrRef(keys ...string) error {
 			return err
 		}
 
-		item := ada.parse(v)
+		item := ada.mustParse(v)
 		if item.Reference() > 0 {
 			item.DecrRef()
 		}
 
-		err = b.Put(k, ada.marshalItem(item))
+		err = b.Put(k, ada.mustMarshalItem(item))
 		if err != nil {
 			return err
 		}
@@ -154,13 +154,13 @@ func (ada *adapter) Close() error {
 	return ada.backend.Close()
 }
 
-func (ada *adapter) parse(data []byte) cache.Item {
+func (ada *adapter) mustParse(data []byte) cache.Item {
 	var item cache.Item
 	ada.codec.Unmarshal(data, &item)
 	return item
 }
 
-func (ada *adapter) marshalItem(item cache.Item) []byte {
+func (ada *adapter) mustMarshalItem(item cache.Item) []byte {
 	data, _ := ada.codec.Marshal(item)
 	return data
 }
@@ -168,6 +168,5 @@ func (ada *adapter) marshalItem(item cache.Item) []byte {
 func (ada *adapter) newMarshaledItem(key string, size int64) []byte {
 	id := ada.idgen.Get()
 	item := cache.New(id, key, size)
-	data, _ := ada.codec.Marshal(item)
-	return data
+	return ada.mustMarshalItem(item)
 }
