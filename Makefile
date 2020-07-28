@@ -10,7 +10,7 @@ build:
 	go build
 
 test:
-	go test ${GOTEST_FLAGS}
+	go test ${GOTEST_FLAGS} ./...
 	go tool cover -html=${COVERAGE_FILE}
 
 clean:
