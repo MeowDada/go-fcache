@@ -1,8 +1,6 @@
 package policy
 
 import (
-	"io/ioutil"
-	"os"
 	"testing"
 	"time"
 
@@ -11,88 +9,219 @@ import (
 	"github.com/meowdada/go-fcache/codec"
 )
 
-func TestPolicyOptions(t *testing.T) {
-	// Case1: AllowPsudo option
-	h := backend.Adapter(gomap.New(), codec.Gob{})
-	err := h.IncrRef("psudo")
-	if err != nil {
-		t.Fatal(err)
+func TestPolicyOptionNotAllowPsudo(t *testing.T) {
+	testcases := []struct {
+		description string
+		scenario    func() error
+		expectErr   bool
+	}{
+		{
+			"not allow to evict psudo cache",
+			func() error {
+				pool := backend.Adapter(gomap.New(), codec.Gob{})
+				pool.IncrRef("123")
+				pool.DecrRef("123")
+				rr := RR(NotEvictPsudo())
+				_, err := rr.Evict(pool)
+				return err
+			},
+			true,
+		},
+		{
+			"allow to evict psudo cache",
+			func() error {
+				pool := backend.Adapter(gomap.New(), codec.Gob{})
+				pool.IncrRef("123")
+				pool.DecrRef("123")
+				rr := RR()
+				_, err := rr.Evict(pool)
+				return err
+			},
+			false,
+		},
 	}
 
-	err = h.DecrRef("psudo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := RR(AllowPsudo())
-	_, err = rr.Evict(h)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Case2: AllowReferenced option
-	h = backend.Adapter(gomap.New(), codec.Gob{})
-	err = h.IncrRef("refed")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = h.IncrRef("refed")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr = RR(AllowPsudo(), AllowReferenced())
-	_, err = rr.Evict(h)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Case3: MinimalUsed Option
-	h = backend.Adapter(gomap.New(), codec.Gob{})
-	h.IncrRef("abc")
-	h.IncrRef("abc")
-	h.DecrRef("abc")
-	h.DecrRef("abc")
-	rr = RR(AllowPsudo(), MinimalUsed(3))
-	_, err = rr.Evict(h)
-	if err != ErrNoEmitableCaches {
-		t.Errorf("execpt %v, but get %v", ErrNoEmitableCaches, err)
-	}
-
-	// Case4: MinimalLivedTime option
-	h = backend.Adapter(gomap.New(), codec.Gob{})
-	h.Put("def", 100)
-	time.Sleep(time.Millisecond)
-	rr = RR(AllowPsudo(), MinimalLiveTime(time.Second))
-	_, err = rr.Evict(h)
-	if err != ErrNoEmitableCaches {
-		t.Errorf("expect %v, but get %v", ErrNoEmitableCaches, err)
+	for idx, tc := range testcases {
+		err := tc.scenario()
+		if err != nil && !tc.expectErr {
+			t.Errorf("[#Case%d]: %s, expect no error, but get %v", idx, tc.description, err)
+		}
+		if err == nil && tc.expectErr {
+			t.Errorf("[#Case%d]: %s, expect an error, but get no errors", idx, tc.description)
+		}
 	}
 }
 
-func TestPolicyAllowReferenced(t *testing.T) {
-	db := backend.Adapter(gomap.New(), codec.Gob{})
-
-	err := ioutil.WriteFile("test123", nil, 0644)
-	if err != nil {
-		t.Fatal(err)
+func TestPolicyOptionEvictReferenced(t *testing.T) {
+	testcases := []struct {
+		description string
+		scenario    func() error
+		expectErr   bool
+	}{
+		{
+			"not allow to evict a referenced cache",
+			func() error {
+				pool := backend.Adapter(gomap.New(), codec.Gob{})
+				pool.IncrRef("123")
+				rr := RR()
+				_, err := rr.Evict(pool)
+				return err
+			},
+			true,
+		},
+		{
+			"allow to evict a referenced cache",
+			func() error {
+				pool := backend.Adapter(gomap.New(), codec.Gob{})
+				pool.IncrRef("123")
+				rr := RR(EvictReferenced())
+				_, err := rr.Evict(pool)
+				return err
+			},
+			false,
+		},
 	}
-	defer os.Remove("test123")
 
-	err = db.Put("test123", 100)
-	if err != nil {
-		t.Fatal(err)
+	for idx, tc := range testcases {
+		err := tc.scenario()
+		if err != nil && !tc.expectErr {
+			t.Errorf("[#Case%d]: %s, expect no error, but get %v", idx, tc.description, err)
+		}
+		if err == nil && tc.expectErr {
+			t.Errorf("[#Case%d]: %s, expect an error, but get no errors", idx, tc.description)
+		}
+	}
+}
+
+func TestPolicyOptionMinUsed(t *testing.T) {
+	testcases := []struct {
+		description string
+		scenario    func() error
+		expectErr   bool
+	}{
+		{
+			"not allow to evict a cache item with min used smaller than setting",
+			func() error {
+				pool := backend.Adapter(gomap.New(), codec.Gob{})
+				pool.IncrRef("123")
+				pool.DecrRef("123")
+				rr := RR(MinimalUsed(3))
+				_, err := rr.Evict(pool)
+				return err
+			},
+			true,
+		},
+		{
+			"allow to evict a referenced cache with min used equal or greater than setting",
+			func() error {
+				pool := backend.Adapter(gomap.New(), codec.Gob{})
+				pool.IncrRef("123")
+				pool.IncrRef("123")
+				pool.IncrRef("123")
+				pool.DecrRef("123")
+				pool.DecrRef("123")
+				pool.DecrRef("123")
+				rr := RR(MinimalUsed(3))
+				_, err := rr.Evict(pool)
+				return err
+			},
+			false,
+		},
 	}
 
-	err = db.IncrRef("test123")
-	if err != nil {
-		t.Fatal(err)
+	for idx, tc := range testcases {
+		err := tc.scenario()
+		if err != nil && !tc.expectErr {
+			t.Errorf("[#Case%d]: %s, expect no error, but get %v", idx, tc.description, err)
+		}
+		if err == nil && tc.expectErr {
+			t.Errorf("[#Case%d]: %s, expect an error, but get no errors", idx, tc.description)
+		}
+	}
+}
+
+func TestPolicyOptionMinLiveTime(t *testing.T) {
+	testcases := []struct {
+		description string
+		scenario    func() error
+		expectErr   bool
+	}{
+		{
+			"not allow to evict a cache item with live time smaller than setting",
+			func() error {
+				pool := backend.Adapter(gomap.New(), codec.Gob{})
+				pool.Put("123", 456)
+				rr := RR(MinLiveTime(time.Second))
+				_, err := rr.Evict(pool)
+				return err
+			},
+			true,
+		},
+		{
+			"allow to evict a referenced cache with live time equal or greater than setting",
+			func() error {
+				pool := backend.Adapter(gomap.New(), codec.Gob{})
+				pool.Put("123", 456)
+				time.Sleep(time.Millisecond)
+				rr := RR(MinLiveTime(time.Millisecond))
+				_, err := rr.Evict(pool)
+				return err
+			},
+			false,
+		},
 	}
 
-	rr := RR()
-	v, err := rr.Evict(db)
-	if err == nil {
-		t.Fatalf("expect evict no cache item, but get %v", v)
+	for idx, tc := range testcases {
+		err := tc.scenario()
+		if err != nil && !tc.expectErr {
+			t.Errorf("[#Case%d]: %s, expect no error, but get %v", idx, tc.description, err)
+		}
+		if err == nil && tc.expectErr {
+			t.Errorf("[#Case%d]: %s, expect an error, but get no errors", idx, tc.description)
+		}
+	}
+}
+
+func TestPolicyOptionLastUsed(t *testing.T) {
+	testcases := []struct {
+		description string
+		scenario    func() error
+		expectErr   bool
+	}{
+		{
+			"not allow to evict a recently used cache item",
+			func() error {
+				pool := backend.Adapter(gomap.New(), codec.Gob{})
+				pool.IncrRef("123")
+				pool.DecrRef("123")
+				rr := RR(LastUsed(time.Second))
+				_, err := rr.Evict(pool)
+				return err
+			},
+			true,
+		},
+		{
+			"allow to evict a recently used cache item",
+			func() error {
+				pool := backend.Adapter(gomap.New(), codec.Gob{})
+				pool.IncrRef("123")
+				pool.DecrRef("123")
+				time.Sleep(time.Millisecond)
+				rr := RR(LastUsed(time.Millisecond))
+				_, err := rr.Evict(pool)
+				return err
+			},
+			false,
+		},
+	}
+
+	for idx, tc := range testcases {
+		err := tc.scenario()
+		if err != nil && !tc.expectErr {
+			t.Errorf("[#Case%d]: %s, expect no error, but get %v", idx, tc.description, err)
+		}
+		if err == nil && tc.expectErr {
+			t.Errorf("[#Case%d]: %s, expect an error, but get no errors", idx, tc.description)
+		}
 	}
 }

@@ -6,5 +6,8 @@ import "github.com/meowdada/go-fcache/cache"
 // from a cache pool. If it is unable to evict any cache item so far, return
 // a special errors as ErrNoEmitableCaches.
 type Policy interface {
-	Evict(db cache.Pool) (cache.Item, error)
+
+	// Evict evicts a cache item from the cache pool. If not cache item available,
+	// it should return a special error as ErrNoEmitableCaches.
+	Evict(pool cache.Pool) (cache.Item, error)
 }
